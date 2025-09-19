@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query, Delete, Patch, UseGuards, NotFoundException } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, Delete, Patch, UseGuards, NotFoundException, Request, HttpException, HttpStatus } from '@nestjs/common';
 import { TasksService } from './tasks.service';
 import { ProjectsService } from '../projects/projects.service';
 import { UsersService } from '../users/users.service';
@@ -17,13 +17,21 @@ export class TasksController {
   ) {}
 
   @Get()
-  findAll() {
-    return this.tasksService.findAll();
+  async findAll(@Request() req: any) {
+    // Only return tasks assigned to the current user
+    return this.tasksService.findByAssignedUser(req.user.userId);
   }
 
   @Get('search')
-  search(@Query('query') query: string) {
-    return this.tasksService.search(query);
+  async search(@Query('query') query: string, @Request() req: any) {
+    // Get all tasks assigned to the user first
+    const userTasks = await this.tasksService.findByAssignedUser(req.user.userId);
+    
+    // Filter the search results to only include user's tasks
+    const searchResults = await this.tasksService.search(query);
+    const userTaskIds = userTasks.map(task => task.id);
+    
+    return searchResults.filter(task => userTaskIds.includes(task.id));
   }
 
   @Post()
@@ -59,17 +67,47 @@ export class TasksController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.tasksService.findOne(id);
+  async findOne(@Param('id') id: string, @Request() req: any) {
+    const task = await this.tasksService.findOne(id);
+    if (!task) {
+      throw new NotFoundException('Task not found');
+    }
+    
+    // Only allow access if user is assigned to the task
+    if (!task.assignedTo || task.assignedTo.id !== req.user.userId) {
+      throw new HttpException('Access denied - task not assigned to you', HttpStatus.FORBIDDEN);
+    }
+    
+    return task;
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateTaskDto: UpdateTaskDto) {
+  async update(@Param('id') id: string, @Body() updateTaskDto: UpdateTaskDto, @Request() req: any) {
+    const task = await this.tasksService.findOne(id);
+    if (!task) {
+      throw new NotFoundException('Task not found');
+    }
+    
+    // Only allow updates if user is assigned to the task
+    if (!task.assignedTo || task.assignedTo.id !== req.user.userId) {
+      throw new HttpException('Access denied - you can only update tasks assigned to you', HttpStatus.FORBIDDEN);
+    }
+    
     return this.tasksService.update(id, updateTaskDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  async remove(@Param('id') id: string, @Request() req: any) {
+    const task = await this.tasksService.findOne(id);
+    if (!task) {
+      throw new NotFoundException('Task not found');
+    }
+    
+    // Only allow deletion if user is assigned to the task
+    if (!task.assignedTo || task.assignedTo.id !== req.user.userId) {
+      throw new HttpException('Access denied - you can only delete tasks assigned to you', HttpStatus.FORBIDDEN);
+    }
+    
     return this.tasksService.remove(id);
   }
 

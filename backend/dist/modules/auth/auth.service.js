@@ -54,15 +54,9 @@ let AuthService = class AuthService {
     }
     async validateUser(email, password) {
         const user = await this.users.findByEmail(email);
-        if (!user) {
-            console.log('User not found:', email);
+        if (!user)
             throw new common_1.UnauthorizedException('Invalid credentials');
-        }
-        console.log('User found:', user.email);
-        console.log('Stored password hash:', user.password);
-        console.log('Provided password:', password);
         const ok = await bcrypt.compare(password, user.password);
-        console.log('Password comparison result:', ok);
         if (!ok)
             throw new common_1.UnauthorizedException('Invalid credentials');
         return user;

@@ -26,8 +26,9 @@ const TasksPage: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [filter, setFilter] = useState<'all' | 'todo' | 'in_progress' | 'done'>('all');
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<TaskFormData>();
+  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<TaskFormData>();
 
   useEffect(() => {
     loadData();
@@ -52,16 +53,28 @@ const TasksPage: React.FC = () => {
 
   const onSubmit = async (data: TaskFormData) => {
     try {
-      const response = await tasksAPI.create({
-        ...data,
-        assignedToId: data.assignedToId || undefined,
-      });
-      setTasks(prev => [response.data, ...prev]);
+      if (editingTask) {
+        // Update existing task
+        const response = await tasksAPI.update(editingTask.id, {
+          ...data,
+          assignedToId: data.assignedToId || undefined,
+        });
+        setTasks(prev => prev.map(t => t.id === editingTask.id ? response.data : t));
+        toast.success('Task updated successfully!');
+      } else {
+        // Create new task
+        const response = await tasksAPI.create({
+          ...data,
+          assignedToId: data.assignedToId || undefined,
+        });
+        setTasks(prev => [response.data, ...prev]);
+        toast.success('Task created successfully!');
+      }
       setShowForm(false);
+      setEditingTask(null);
       reset();
-      toast.success('Task created successfully!');
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to create task');
+      toast.error(error.response?.data?.message || `Failed to ${editingTask ? 'update' : 'create'} task`);
     }
   };
 
@@ -73,6 +86,40 @@ const TasksPage: React.FC = () => {
     } catch (error) {
       toast.error('Failed to update task');
     }
+  };
+
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+    setShowForm(true);
+    
+    // Pre-fill form with task data
+    setValue('title', task.title);
+    setValue('description', task.description);
+    setValue('projectId', task.project.id);
+    setValue('assignedToId', task.assignedTo?.id || '');
+    setValue('priority', task.priority);
+    setValue('status', task.status);
+    setValue('due_date', task.due_date || '');
+  };
+
+  const handleDeleteTask = async (taskId: string) => {
+    if (!confirm('Are you sure you want to delete this task?')) {
+      return;
+    }
+
+    try {
+      await tasksAPI.delete(taskId);
+      setTasks(prev => prev.filter(t => t.id !== taskId));
+      toast.success('Task deleted successfully!');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to delete task');
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setShowForm(false);
+    setEditingTask(null);
+    reset();
   };
 
   const filteredTasks = tasks.filter(task => {
@@ -121,7 +168,10 @@ const TasksPage: React.FC = () => {
             </p>
           </div>
           <button
-            onClick={() => setShowForm(true)}
+            onClick={() => {
+              setEditingTask(null);
+              setShowForm(true);
+            }}
             className="btn btn-primary flex items-center gap-2"
           >
             <PlusIcon className="h-5 w-5" />
@@ -146,10 +196,12 @@ const TasksPage: React.FC = () => {
           ))}
         </div>
 
-        {/* Create Task Form */}
+        {/* Create/Edit Task Form */}
         {showForm && (
           <div className="card">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Create New Task</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">
+              {editingTask ? 'Edit Task' : 'Create New Task'}
+            </h3>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
@@ -248,14 +300,11 @@ const TasksPage: React.FC = () => {
 
               <div className="flex gap-3">
                 <button type="submit" className="btn btn-primary">
-                  Create Task
+                  {editingTask ? 'Update Task' : 'Create Task'}
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    setShowForm(false);
-                    reset();
-                  }}
+                  onClick={handleCancelEdit}
                   className="btn btn-secondary"
                 >
                   Cancel
@@ -307,10 +356,18 @@ const TasksPage: React.FC = () => {
                         <CheckIcon className="h-5 w-5" />
                       </button>
                     )}
-                    <button className="text-gray-400 hover:text-gray-600">
+                    <button
+                      className="text-gray-400 hover:text-gray-600"
+                      onClick={() => handleEditTask(task)}
+                      title="Edit task"
+                    >
                       <PencilIcon className="h-4 w-4" />
                     </button>
-                    <button className="text-gray-400 hover:text-red-600">
+                    <button
+                      className="text-gray-400 hover:text-red-600"
+                      onClick={() => handleDeleteTask(task.id)}
+                      title="Delete task"
+                    >
                       <TrashIcon className="h-4 w-4" />
                     </button>
                   </div>

@@ -1,7 +1,7 @@
 import { Resolver, Query, Args, Int, Mutation } from '@nestjs/graphql';
 import { TasksService } from '../../tasks/tasks.service';
 import { Task } from '../../tasks/task.entity';
-import { UseGuards } from '@nestjs/common';
+import { UseGuards, Request } from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { CreateTaskDto } from '../../tasks/dto/create-task.dto';
 import { UpdateTaskDto } from '../../tasks/dto/update-task.dto';
@@ -18,8 +18,8 @@ export class TaskResolver {
 
   @Query(() => [Task])
   @UseGuards(JwtAuthGuard)
-  async tasks() {
-    return this.tasksService.findAll();
+  async tasks(@Request() req: any) {
+    return this.tasksService.findByAssignedUser(req.user.userId);
   }
 
   @Query(() => Task)

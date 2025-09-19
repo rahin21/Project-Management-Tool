@@ -29,6 +29,28 @@ export class ProjectsService {
     return projects;
   }
 
+  async findByUser(userId: string): Promise<Project[]> {
+    const cacheKey = `projects:user:${userId}`;
+    const cachedProjects = await this.cacheService.get<Project[]>(cacheKey);
+    
+    if (cachedProjects) {
+      return cachedProjects;
+    }
+    
+    // Find projects where user is owner OR assigned to tasks in the project
+    const projects = await this.projectsRepository
+      .createQueryBuilder('project')
+      .leftJoinAndSelect('project.owner', 'owner')
+      .leftJoinAndSelect('project.tasks', 'tasks')
+      .leftJoinAndSelect('tasks.assignedTo', 'assignedTo')
+      .where('project.owner.id = :userId', { userId })
+      .orWhere('tasks.assignedTo.id = :userId', { userId })
+      .getMany();
+    
+    await this.cacheService.set(cacheKey, projects, 300); // Cache for 5 minutes
+    return projects;
+  }
+
   async findOne(id: string): Promise<Project | null> {
     const cacheKey = `project:${id}`;
     const cachedProject = await this.cacheService.get<Project>(cacheKey);

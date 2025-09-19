@@ -25,20 +25,68 @@ let ProjectsController = class ProjectsController {
     create(createProjectDto, req) {
         return this.projectsService.create(createProjectDto, req.user.userId);
     }
-    findAll() {
-        return this.projectsService.findAll();
+    findAll(req) {
+        return this.projectsService.findByUser(req.user.userId);
     }
     search(query) {
         return this.projectsService.search(query);
     }
-    findOne(id) {
-        return this.projectsService.findOne(id);
+    async findOne(id, req) {
+        try {
+            const project = await this.projectsService.findOne(id);
+            if (!project) {
+                throw new common_1.HttpException('Project not found', common_1.HttpStatus.NOT_FOUND);
+            }
+            const hasAccess = project.owner.id === req.user.userId ||
+                project.tasks.some(task => task.assignedTo?.id === req.user.userId);
+            if (!hasAccess) {
+                throw new common_1.HttpException('Access denied', common_1.HttpStatus.FORBIDDEN);
+            }
+            return project;
+        }
+        catch (error) {
+            if (error instanceof common_1.HttpException) {
+                throw error;
+            }
+            throw new common_1.HttpException('Internal server error', common_1.HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
-    update(id, updateProjectDto) {
-        return this.projectsService.update(id, updateProjectDto);
+    async update(id, updateProjectDto, req) {
+        try {
+            const project = await this.projectsService.findOne(id);
+            if (!project) {
+                throw new common_1.HttpException('Project not found', common_1.HttpStatus.NOT_FOUND);
+            }
+            if (project.owner.id !== req.user.userId) {
+                throw new common_1.HttpException('Only project owner can update the project', common_1.HttpStatus.FORBIDDEN);
+            }
+            return this.projectsService.update(id, updateProjectDto);
+        }
+        catch (error) {
+            if (error instanceof common_1.HttpException) {
+                throw error;
+            }
+            throw new common_1.HttpException('Internal server error', common_1.HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
-    remove(id) {
-        return this.projectsService.remove(id);
+    async remove(id, req) {
+        try {
+            const project = await this.projectsService.findOne(id);
+            if (!project) {
+                throw new common_1.HttpException('Project not found', common_1.HttpStatus.NOT_FOUND);
+            }
+            if (project.owner.id !== req.user.userId) {
+                throw new common_1.HttpException('Only project owner can delete the project', common_1.HttpStatus.FORBIDDEN);
+            }
+            await this.projectsService.remove(id);
+            return { message: 'Project deleted successfully' };
+        }
+        catch (error) {
+            if (error instanceof common_1.HttpException) {
+                throw error;
+            }
+            throw new common_1.HttpException('Internal server error', common_1.HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 };
 exports.ProjectsController = ProjectsController;
@@ -52,8 +100,9 @@ __decorate([
 ], ProjectsController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(),
+    __param(0, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], ProjectsController.prototype, "findAll", null);
 __decorate([
@@ -66,24 +115,27 @@ __decorate([
 __decorate([
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
 ], ProjectsController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Patch)(':id'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, update_project_dto_1.UpdateProjectDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:paramtypes", [String, update_project_dto_1.UpdateProjectDto, Object]),
+    __metadata("design:returntype", Promise)
 ], ProjectsController.prototype, "update", null);
 __decorate([
     (0, common_1.Delete)(':id'),
     __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
 ], ProjectsController.prototype, "remove", null);
 exports.ProjectsController = ProjectsController = __decorate([
     (0, common_1.Controller)('projects'),

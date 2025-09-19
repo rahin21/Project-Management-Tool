@@ -28,8 +28,8 @@ let TaskResolver = class TaskResolver {
         this.projectsService = projectsService;
         this.usersService = usersService;
     }
-    async tasks() {
-        return this.tasksService.findAll();
+    async tasks(req) {
+        return this.tasksService.findByAssignedUser(req.user.userId);
     }
     async task(id) {
         return this.tasksService.findOne(id.toString());
@@ -66,8 +66,9 @@ exports.TaskResolver = TaskResolver;
 __decorate([
     (0, graphql_1.Query)(() => [task_entity_1.Task]),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], TaskResolver.prototype, "tasks", null);
 __decorate([

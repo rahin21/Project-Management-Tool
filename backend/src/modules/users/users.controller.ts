@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, HttpException, HttpStatus, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Delete, Param, HttpException, HttpStatus, UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { User, UserRole } from './user.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -58,6 +58,17 @@ export class UsersController {
   @Get('health')
   health() {
     return { ok: true };
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  async deleteUser(@Param('id') id: string) {
+    try {
+      await this.usersService.delete(id);
+      return { message: 'User deleted successfully' };
+    } catch (error) {
+      throw new HttpException('Failed to delete user', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 }
 

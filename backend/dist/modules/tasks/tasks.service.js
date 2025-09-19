@@ -30,6 +30,12 @@ let TasksService = class TasksService {
             relations: ['project', 'assignedTo']
         });
     }
+    findByAssignedUser(userId) {
+        return this.tasks.find({
+            where: { assignedTo: { id: userId } },
+            relations: ['project', 'assignedTo']
+        });
+    }
     async findOne(id) {
         return this.tasks.findOne({
             where: { id },

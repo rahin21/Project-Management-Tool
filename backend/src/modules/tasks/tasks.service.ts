@@ -21,6 +21,13 @@ export class TasksService {
     });
   }
 
+  findByAssignedUser(userId: string) {
+    return this.tasks.find({
+      where: { assignedTo: { id: userId } },
+      relations: ['project', 'assignedTo']
+    });
+  }
+
   async findOne(id: string) {
     return this.tasks.findOne({
       where: { id },
