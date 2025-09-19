@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useNotifications } from '../contexts/NotificationContext';
 import { tasksAPI, projectsAPI, usersAPI } from '../lib/api';
 import { Task, Project, User } from '../lib/api';
 import Layout from '../components/Layout';
@@ -21,6 +22,7 @@ interface TaskFormData {
 
 const TasksPage: React.FC = () => {
   const { user } = useAuth();
+  const { addNotification } = useNotifications();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [users, setUsers] = useState<User[]>([]);

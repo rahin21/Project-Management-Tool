@@ -67,8 +67,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       return;
     }
 
-    // Use localhost:3001 instead of 0.0.0.0 to avoid connection issues
-    const socketUrl = 'http://localhost:3001';
+    // Use localhost:3000 instead of 3001 to match backend port
+    const socketUrl = 'http://localhost:3000';
     console.log('Initializing socket connection to:', socketUrl);
     const newSocket = io(socketUrl, {
       withCredentials: true,
