@@ -97,10 +97,10 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       console.log('Socket readyState at disconnect:', newSocket.io.engine.readyState);
     });
 
-    newSocket.on('connect_error', (error) => {
+    newSocket.on('connect_error', (error: Error) => {
       console.error('❌ Socket connection error:', error.message);
-      console.error('Error type:', error.type);
-      console.error('Error description:', error.description);
+      console.error('Error name:', error.name);
+      console.error('Error cause:', error.cause);
     });
 
     newSocket.on('notification', (notification: Notification) => {

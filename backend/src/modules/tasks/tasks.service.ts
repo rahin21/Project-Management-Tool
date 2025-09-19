@@ -34,7 +34,7 @@ export class TasksService {
   async findOne(id: string) {
     return this.tasks.findOne({
       where: { id },
-      relations: ['project', 'assignedTo'],
+      relations: ['project', 'project.owner', 'assignedTo'],
     });
   }
 
@@ -65,18 +65,47 @@ export class TasksService {
     return savedTask;
   }
 
-  async update(id: string, updateData: Partial<Task>) {
-    await this.tasks.update(id, updateData);
-    const updatedTask = await this.findOne(id);
-    
-    if (!updatedTask) {
-      throw new Error('Task not found after update');
+  async update(id: string, updateData: any) {
+    try {
+      // Transform the DTO data to match entity structure
+      const transformedData: any = { ...updateData };
+      
+      // Handle assignedToId -> assignedTo relationship
+      if (updateData.assignedToId !== undefined) {
+        if (updateData.assignedToId) {
+          transformedData.assignedTo = { id: updateData.assignedToId };
+        } else {
+          transformedData.assignedTo = null;
+        }
+        delete transformedData.assignedToId;
+      }
+      
+      // Handle projectId -> project relationship
+      if (updateData.projectId) {
+        transformedData.project = { id: updateData.projectId };
+        delete transformedData.projectId;
+      }
+      
+      await this.tasks.update(id, transformedData);
+      const updatedTask = await this.findOne(id);
+      
+      if (!updatedTask) {
+        throw new Error('Task not found after update');
+      }
+      
+      // Update the task in Elasticsearch
+      try {
+        await this.searchService.indexTask(updatedTask);
+      } catch (searchError) {
+        // Log search error but don't fail the update
+        console.error('Failed to index task in Elasticsearch:', searchError);
+      }
+      
+      return updatedTask;
+    } catch (error) {
+      console.error('Error updating task:', error);
+      throw error;
     }
-    
-    // Update the task in Elasticsearch
-    await this.searchService.indexTask(updatedTask);
-    
-    return updatedTask;
   }
 
   async remove(id: string) {

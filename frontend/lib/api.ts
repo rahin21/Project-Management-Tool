@@ -88,7 +88,7 @@ export const projectsAPI = {
   getById: (id: string) => api.get(`/projects/${id}`),
   create: (data: { name: string; description?: string; ownerEmail: string }) =>
     api.post('/projects', data),
-  update: (id: string, data: Partial<Project>) => api.put(`/projects/${id}`, data),
+  update: (id: string, data: Partial<Project>) => api.patch(`/projects/${id}`, data),
   delete: (id: string) => api.delete(`/projects/${id}`),
 };
 
@@ -107,7 +107,7 @@ export const tasksAPI = {
     due_date?: string;
     dependsOnIds?: string[];
   }) => api.post('/tasks', data),
-  update: (id: string, data: Partial<Task>) => api.put(`/tasks/${id}`, data),
+  update: (id: string, data: Partial<Task>) => api.patch(`/tasks/${id}`, data),
   delete: (id: string) => api.delete(`/tasks/${id}`),
   getTopoSort: (projectId: string) => api.get(`/tasks/topo/${projectId}`),
 };

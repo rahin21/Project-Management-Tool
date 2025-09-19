@@ -86,20 +86,28 @@ export class TasksController {
 
   @Patch(':id')
   async update(@Param('id') id: string, @Body() updateTaskDto: UpdateTaskDto, @Request() req: any) {
-    const task = await this.tasksService.findOne(id);
-    if (!task) {
-      throw new NotFoundException('Task not found');
+    try {
+      const task = await this.tasksService.findOne(id);
+      if (!task) {
+        throw new NotFoundException('Task not found');
+      }
+      
+      // Allow updates if user is assigned to the task OR owns the project
+      const hasAccess = (task.assignedTo && task.assignedTo.id === req.user.userId) || 
+                       (task.project && task.project.owner && task.project.owner.id === req.user.userId);
+      
+      if (!hasAccess) {
+        throw new HttpException('Access denied - you can only update tasks assigned to you or in your projects', HttpStatus.FORBIDDEN);
+      }
+      
+      return this.tasksService.update(id, updateTaskDto);
+    } catch (error) {
+      console.error('Task update error:', error);
+      if (error instanceof HttpException || error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
     }
-    
-    // Allow updates if user is assigned to the task OR owns the project
-    const hasAccess = (task.assignedTo && task.assignedTo.id === req.user.userId) || 
-                     (task.project.owner && task.project.owner.id === req.user.userId);
-    
-    if (!hasAccess) {
-      throw new HttpException('Access denied - you can only update tasks assigned to you or in your projects', HttpStatus.FORBIDDEN);
-    }
-    
-    return this.tasksService.update(id, updateTaskDto);
   }
 
   @Delete(':id')

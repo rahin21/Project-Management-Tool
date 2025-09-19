@@ -59,7 +59,7 @@ const TasksPage: React.FC = () => {
         // Update existing task
         const response = await tasksAPI.update(editingTask.id, {
           ...data,
-          assignedToId: data.assignedToId || undefined,
+          assignedTo: users.find(u => u.id === data.assignedToId) || null,
         });
         setTasks(prev => prev.map(t => t.id === editingTask.id ? response.data : t));
         toast.success('Task updated successfully!');
@@ -172,6 +172,7 @@ const TasksPage: React.FC = () => {
           <button
             onClick={() => {
               setEditingTask(null);
+              reset(); // Clear form data when creating new task
               setShowForm(true);
             }}
             className="btn btn-primary flex items-center gap-2"
