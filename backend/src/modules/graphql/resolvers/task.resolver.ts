@@ -19,13 +19,26 @@ export class TaskResolver {
   @Query(() => [Task])
   @UseGuards(JwtAuthGuard)
   async tasks(@Request() req: any) {
-    return this.tasksService.findByAssignedUser(req.user.userId);
+    return this.tasksService.findByAssignedUserOrProjectOwner(req.user.userId);
   }
 
   @Query(() => Task)
   @UseGuards(JwtAuthGuard)
-  async task(@Args('id', { type: () => Int }) id: number) {
-    return this.tasksService.findOne(id.toString());
+  async task(@Args('id', { type: () => Int }) id: number, @Request() req: any) {
+    const task = await this.tasksService.findOne(id.toString());
+    if (!task) {
+      throw new Error('Task not found');
+    }
+    
+    // Allow access if user is assigned to the task OR owns the project
+    const hasAccess = (task.assignedTo && task.assignedTo.id === req.user.userId) || 
+                     (task.project.owner && task.project.owner.id === req.user.userId);
+    
+    if (!hasAccess) {
+      throw new Error('Access denied - you can only view tasks assigned to you or in your projects');
+    }
+    
+    return task;
   }
 
   @Mutation(() => Task)
@@ -60,13 +73,40 @@ export class TaskResolver {
   async updateTask(
     @Args('id', { type: () => Int }) id: number,
     @Args('input') input: UpdateTaskDto,
+    @Request() req: any,
   ) {
+    const task = await this.tasksService.findOne(id.toString());
+    if (!task) {
+      throw new Error('Task not found');
+    }
+    
+    // Allow updates if user is assigned to the task OR owns the project
+    const hasAccess = (task.assignedTo && task.assignedTo.id === req.user.userId) || 
+                     (task.project.owner && task.project.owner.id === req.user.userId);
+    
+    if (!hasAccess) {
+      throw new Error('Access denied - you can only update tasks assigned to you or in your projects');
+    }
+    
     return this.tasksService.update(id.toString(), input);
   }
 
   @Mutation(() => Boolean)
   @UseGuards(JwtAuthGuard)
-  async deleteTask(@Args('id', { type: () => Int }) id: number) {
+  async deleteTask(@Args('id', { type: () => Int }) id: number, @Request() req: any) {
+    const task = await this.tasksService.findOne(id.toString());
+    if (!task) {
+      throw new Error('Task not found');
+    }
+    
+    // Allow deletion if user is assigned to the task OR owns the project
+    const hasAccess = (task.assignedTo && task.assignedTo.id === req.user.userId) || 
+                     (task.project.owner && task.project.owner.id === req.user.userId);
+    
+    if (!hasAccess) {
+      throw new Error('Access denied - you can only delete tasks assigned to you or in your projects');
+    }
+    
     await this.tasksService.remove(id.toString());
     return true;
   }

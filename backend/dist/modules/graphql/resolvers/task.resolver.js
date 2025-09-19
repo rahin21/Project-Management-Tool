@@ -29,10 +29,19 @@ let TaskResolver = class TaskResolver {
         this.usersService = usersService;
     }
     async tasks(req) {
-        return this.tasksService.findByAssignedUser(req.user.userId);
+        return this.tasksService.findByAssignedUserOrProjectOwner(req.user.userId);
     }
-    async task(id) {
-        return this.tasksService.findOne(id.toString());
+    async task(id, req) {
+        const task = await this.tasksService.findOne(id.toString());
+        if (!task) {
+            throw new Error('Task not found');
+        }
+        const hasAccess = (task.assignedTo && task.assignedTo.id === req.user.userId) ||
+            (task.project.owner && task.project.owner.id === req.user.userId);
+        if (!hasAccess) {
+            throw new Error('Access denied - you can only view tasks assigned to you or in your projects');
+        }
+        return task;
     }
     async createTask(input) {
         const project = await this.projectsService.findOne(input.projectId);
@@ -54,10 +63,28 @@ let TaskResolver = class TaskResolver {
             dependsOnIds: input.dependsOnIds,
         });
     }
-    async updateTask(id, input) {
+    async updateTask(id, input, req) {
+        const task = await this.tasksService.findOne(id.toString());
+        if (!task) {
+            throw new Error('Task not found');
+        }
+        const hasAccess = (task.assignedTo && task.assignedTo.id === req.user.userId) ||
+            (task.project.owner && task.project.owner.id === req.user.userId);
+        if (!hasAccess) {
+            throw new Error('Access denied - you can only update tasks assigned to you or in your projects');
+        }
         return this.tasksService.update(id.toString(), input);
     }
-    async deleteTask(id) {
+    async deleteTask(id, req) {
+        const task = await this.tasksService.findOne(id.toString());
+        if (!task) {
+            throw new Error('Task not found');
+        }
+        const hasAccess = (task.assignedTo && task.assignedTo.id === req.user.userId) ||
+            (task.project.owner && task.project.owner.id === req.user.userId);
+        if (!hasAccess) {
+            throw new Error('Access denied - you can only delete tasks assigned to you or in your projects');
+        }
         await this.tasksService.remove(id.toString());
         return true;
     }
@@ -75,8 +102,9 @@ __decorate([
     (0, graphql_1.Query)(() => task_entity_1.Task),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __param(0, (0, graphql_1.Args)('id', { type: () => graphql_1.Int })),
+    __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
+    __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", Promise)
 ], TaskResolver.prototype, "task", null);
 __decorate([
@@ -92,16 +120,18 @@ __decorate([
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __param(0, (0, graphql_1.Args)('id', { type: () => graphql_1.Int })),
     __param(1, (0, graphql_1.Args)('input')),
+    __param(2, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, update_task_dto_1.UpdateTaskDto]),
+    __metadata("design:paramtypes", [Number, update_task_dto_1.UpdateTaskDto, Object]),
     __metadata("design:returntype", Promise)
 ], TaskResolver.prototype, "updateTask", null);
 __decorate([
     (0, graphql_1.Mutation)(() => Boolean),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __param(0, (0, graphql_1.Args)('id', { type: () => graphql_1.Int })),
+    __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
+    __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", Promise)
 ], TaskResolver.prototype, "deleteTask", null);
 exports.TaskResolver = TaskResolver = __decorate([

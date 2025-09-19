@@ -30,10 +30,13 @@ let TasksService = class TasksService {
             relations: ['project', 'assignedTo']
         });
     }
-    findByAssignedUser(userId) {
+    findByAssignedUserOrProjectOwner(userId) {
         return this.tasks.find({
-            where: { assignedTo: { id: userId } },
-            relations: ['project', 'assignedTo']
+            where: [
+                { assignedTo: { id: userId } },
+                { project: { owner: { id: userId } } }
+            ],
+            relations: ['project', 'project.owner', 'assignedTo']
         });
     }
     async findOne(id) {

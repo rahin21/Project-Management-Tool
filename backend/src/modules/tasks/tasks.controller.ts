@@ -18,16 +18,16 @@ export class TasksController {
 
   @Get()
   async findAll(@Request() req: any) {
-    // Only return tasks assigned to the current user
-    return this.tasksService.findByAssignedUser(req.user.userId);
+    // Return tasks assigned to the current user OR tasks in projects owned by the user
+    return this.tasksService.findByAssignedUserOrProjectOwner(req.user.userId);
   }
 
   @Get('search')
   async search(@Query('query') query: string, @Request() req: any) {
-    // Get all tasks assigned to the user first
-    const userTasks = await this.tasksService.findByAssignedUser(req.user.userId);
+    // Get all tasks assigned to the user or in projects owned by the user
+    const userTasks = await this.tasksService.findByAssignedUserOrProjectOwner(req.user.userId);
     
-    // Filter the search results to only include user's tasks
+    // Filter the search results to only include user's accessible tasks
     const searchResults = await this.tasksService.search(query);
     const userTaskIds = userTasks.map(task => task.id);
     
@@ -73,9 +73,12 @@ export class TasksController {
       throw new NotFoundException('Task not found');
     }
     
-    // Only allow access if user is assigned to the task
-    if (!task.assignedTo || task.assignedTo.id !== req.user.userId) {
-      throw new HttpException('Access denied - task not assigned to you', HttpStatus.FORBIDDEN);
+    // Allow access if user is assigned to the task OR owns the project
+    const hasAccess = (task.assignedTo && task.assignedTo.id === req.user.userId) || 
+                     (task.project.owner && task.project.owner.id === req.user.userId);
+    
+    if (!hasAccess) {
+      throw new HttpException('Access denied - you can only view tasks assigned to you or in your projects', HttpStatus.FORBIDDEN);
     }
     
     return task;
@@ -88,9 +91,12 @@ export class TasksController {
       throw new NotFoundException('Task not found');
     }
     
-    // Only allow updates if user is assigned to the task
-    if (!task.assignedTo || task.assignedTo.id !== req.user.userId) {
-      throw new HttpException('Access denied - you can only update tasks assigned to you', HttpStatus.FORBIDDEN);
+    // Allow updates if user is assigned to the task OR owns the project
+    const hasAccess = (task.assignedTo && task.assignedTo.id === req.user.userId) || 
+                     (task.project.owner && task.project.owner.id === req.user.userId);
+    
+    if (!hasAccess) {
+      throw new HttpException('Access denied - you can only update tasks assigned to you or in your projects', HttpStatus.FORBIDDEN);
     }
     
     return this.tasksService.update(id, updateTaskDto);
@@ -103,9 +109,12 @@ export class TasksController {
       throw new NotFoundException('Task not found');
     }
     
-    // Only allow deletion if user is assigned to the task
-    if (!task.assignedTo || task.assignedTo.id !== req.user.userId) {
-      throw new HttpException('Access denied - you can only delete tasks assigned to you', HttpStatus.FORBIDDEN);
+    // Allow deletion if user is assigned to the task OR owns the project
+    const hasAccess = (task.assignedTo && task.assignedTo.id === req.user.userId) || 
+                     (task.project.owner && task.project.owner.id === req.user.userId);
+    
+    if (!hasAccess) {
+      throw new HttpException('Access denied - you can only delete tasks assigned to you or in your projects', HttpStatus.FORBIDDEN);
     }
     
     return this.tasksService.remove(id);

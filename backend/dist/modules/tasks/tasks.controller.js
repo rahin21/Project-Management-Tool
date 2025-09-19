@@ -27,10 +27,10 @@ let TasksController = class TasksController {
         this.usersService = usersService;
     }
     async findAll(req) {
-        return this.tasksService.findByAssignedUser(req.user.userId);
+        return this.tasksService.findByAssignedUserOrProjectOwner(req.user.userId);
     }
     async search(query, req) {
-        const userTasks = await this.tasksService.findByAssignedUser(req.user.userId);
+        const userTasks = await this.tasksService.findByAssignedUserOrProjectOwner(req.user.userId);
         const searchResults = await this.tasksService.search(query);
         const userTaskIds = userTasks.map(task => task.id);
         return searchResults.filter(task => userTaskIds.includes(task.id));
@@ -64,8 +64,10 @@ let TasksController = class TasksController {
         if (!task) {
             throw new common_1.NotFoundException('Task not found');
         }
-        if (!task.assignedTo || task.assignedTo.id !== req.user.userId) {
-            throw new common_1.HttpException('Access denied - task not assigned to you', common_1.HttpStatus.FORBIDDEN);
+        const hasAccess = (task.assignedTo && task.assignedTo.id === req.user.userId) ||
+            (task.project.owner && task.project.owner.id === req.user.userId);
+        if (!hasAccess) {
+            throw new common_1.HttpException('Access denied - you can only view tasks assigned to you or in your projects', common_1.HttpStatus.FORBIDDEN);
         }
         return task;
     }
@@ -74,8 +76,10 @@ let TasksController = class TasksController {
         if (!task) {
             throw new common_1.NotFoundException('Task not found');
         }
-        if (!task.assignedTo || task.assignedTo.id !== req.user.userId) {
-            throw new common_1.HttpException('Access denied - you can only update tasks assigned to you', common_1.HttpStatus.FORBIDDEN);
+        const hasAccess = (task.assignedTo && task.assignedTo.id === req.user.userId) ||
+            (task.project.owner && task.project.owner.id === req.user.userId);
+        if (!hasAccess) {
+            throw new common_1.HttpException('Access denied - you can only update tasks assigned to you or in your projects', common_1.HttpStatus.FORBIDDEN);
         }
         return this.tasksService.update(id, updateTaskDto);
     }
@@ -84,8 +88,10 @@ let TasksController = class TasksController {
         if (!task) {
             throw new common_1.NotFoundException('Task not found');
         }
-        if (!task.assignedTo || task.assignedTo.id !== req.user.userId) {
-            throw new common_1.HttpException('Access denied - you can only delete tasks assigned to you', common_1.HttpStatus.FORBIDDEN);
+        const hasAccess = (task.assignedTo && task.assignedTo.id === req.user.userId) ||
+            (task.project.owner && task.project.owner.id === req.user.userId);
+        if (!hasAccess) {
+            throw new common_1.HttpException('Access denied - you can only delete tasks assigned to you or in your projects', common_1.HttpStatus.FORBIDDEN);
         }
         return this.tasksService.remove(id);
     }

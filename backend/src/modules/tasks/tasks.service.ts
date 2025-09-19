@@ -21,10 +21,13 @@ export class TasksService {
     });
   }
 
-  findByAssignedUser(userId: string) {
+  findByAssignedUserOrProjectOwner(userId: string) {
     return this.tasks.find({
-      where: { assignedTo: { id: userId } },
-      relations: ['project', 'assignedTo']
+      where: [
+        { assignedTo: { id: userId } }, // Tasks assigned to the user
+        { project: { owner: { id: userId } } } // Tasks in projects owned by the user
+      ],
+      relations: ['project', 'project.owner', 'assignedTo']
     });
   }
 

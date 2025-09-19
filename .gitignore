@@ -17,6 +17,7 @@ yarn.lock
 /dist
 /build
 /.next
+/frontend/.next
 /out
 
 # IDE and editors
