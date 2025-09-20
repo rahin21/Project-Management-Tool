@@ -5,6 +5,7 @@
   "scripts": {
     "start": "nest start",
     "start:dev": "nest start --watch",
+    "start:prod": "node dist/main.js",
     "build": "nest build",
     "lint": "eslint --ext .ts src",
     "test": "jest",
@@ -18,7 +19,7 @@
     "@bull-board/api": "^5.21.2",
     "@bull-board/express": "^5.21.2",
     "@elastic/elasticsearch": "^8.15.0",
-    "@nestjs/apollo": "^10.1.7",
+    "@nestjs/apollo": "^12.0.0",
     "@nestjs/bull": "^10.2.0",
     "@nestjs/common": "^10.3.0",
     "@nestjs/config": "^3.2.3",

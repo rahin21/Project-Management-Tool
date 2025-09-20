@@ -1,0 +1,64 @@
+services:
+  # Backend API Service
+  - type: web
+    name: project-management-backend
+    runtime: node
+    plan: starter
+    region: oregon
+    rootDir: backend
+    buildCommand: npm install && npm run build
+    startCommand: npm run start:prod
+    healthCheckPath: /api/users/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DB_HOST
+        fromDatabase:
+          name: project-management-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: project-management-db
+          property: port
+      - key: DB_USER
+        fromDatabase:
+          name: project-management-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: project-management-db
+          property: password
+      - key: DB_NAME
+        fromDatabase:
+          name: project-management-db
+          property: database
+      - key: REDIS_HOST
+        fromService:
+          type: redis
+          name: project-management-redis
+          property: host
+      - key: REDIS_PORT
+        fromService:
+          type: redis
+          name: project-management-redis
+          property: port
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ELASTICSEARCH_NODE
+        value: # You'll need to configure this separately or use a service like Elastic Cloud
+
+  # Redis Service
+  - type: redis
+    name: project-management-redis
+    plan: starter
+    region: oregon
+
+# Database
+databases:
+  - name: project-management-db
+    databaseName: pmtool
+    user: postgres
+    plan: starter
+    region: oregon
