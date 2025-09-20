@@ -1,5 +1,13 @@
 # Project Management Tool (NestJS + Next.js)
 
+## 🚀 Live Demo
+
+- **Frontend**: https://project-management-tool-beige.vercel.app/
+- **Backend API**: https://project-management-tool-chan.onrender.com/api
+- **API Documentation**: https://project-management-tool-chan.onrender.com/api/docs
+
+## Local Development
+
 Run everything with Docker. No manual Postgres setup needed.
 
 ## Quick start
