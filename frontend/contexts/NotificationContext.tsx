@@ -68,7 +68,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }
 
     // Use localhost:3001 to match backend port
-    const socketUrl = 'http://localhost:3001';
+    const socketUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (!socketUrl) {
+      console.error('NEXT_PUBLIC_API_URL is not defined');
+      return;
+    }
     console.log('Initializing socket connection to:', socketUrl);
     const newSocket = io(socketUrl, {
       withCredentials: true,
