@@ -2,7 +2,7 @@ import { Resolver, Query, Args, Int, Mutation } from '@nestjs/graphql';
 import { ProjectsService } from '../../projects/projects.service';
 import { Project } from '../../projects/project.entity';
 import { UseGuards } from '@nestjs/common';
-import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../../auth/current-user.decorator';
 import { User } from '../../users/user.entity';
 import { CreateProjectInput } from '../inputs/create-project.input';

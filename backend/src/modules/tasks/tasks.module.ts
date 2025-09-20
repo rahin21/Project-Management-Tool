@@ -4,19 +4,21 @@ import { Task } from './task.entity';
 import { TaskDependency } from './task-dependency.entity';
 import { TasksService } from './tasks.service';
 import { TasksController } from './tasks.controller';
+import { SearchModule } from '../search/search.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { ProjectsModule } from '../projects/projects.module';
 import { UsersModule } from '../users/users.module';
-import { SearchModule } from '../search/search.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Task, TaskDependency]), 
-    ProjectsModule, 
+    TypeOrmModule.forFeature([Task, TaskDependency]),
+    SearchModule,
+    NotificationsModule,
+    ProjectsModule,
     UsersModule,
-    SearchModule
   ],
-  providers: [TasksService],
   controllers: [TasksController],
+  providers: [TasksService],
   exports: [TasksService],
 })
 export class TasksModule {}

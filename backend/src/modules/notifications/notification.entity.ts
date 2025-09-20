@@ -1,6 +1,24 @@
 import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
-import { ObjectType, Field, ID } from '@nestjs/graphql';
+import { ObjectType, Field, ID, registerEnumType } from '@nestjs/graphql';
 import { User } from '../users/user.entity';
+
+export enum NotificationType {
+  PROJECT_CREATED = 'project_created',
+  PROJECT_UPDATED = 'project_updated',
+  PROJECT_DELETED = 'project_deleted',
+  TASK_ASSIGNED = 'task_assigned',
+  TASK_UPDATED = 'task_updated',
+  TASK_COMPLETED = 'task_completed',
+  TASK_DUE_SOON = 'task_due_soon',
+  TASK_OVERDUE = 'task_overdue',
+  PROJECT_MEMBER_ADDED = 'project_member_added',
+  PROJECT_MEMBER_REMOVED = 'project_member_removed',
+  GENERAL = 'general'
+}
+
+registerEnumType(NotificationType, {
+  name: 'NotificationType',
+});
 
 @ObjectType()
 @Entity('notifications')
@@ -16,6 +34,22 @@ export class Notification {
   @Field()
   @Column({ type: 'text' })
   message!: string;
+
+  @Field(() => NotificationType)
+  @Column({
+    type: 'enum',
+    enum: NotificationType,
+    default: NotificationType.GENERAL
+  })
+  type!: NotificationType;
+
+  @Field({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
+  entityId?: string;
+
+  @Field({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
+  entityType?: string;
 
   @Field()
   @Column({ type: 'boolean', default: false })

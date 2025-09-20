@@ -106,15 +106,17 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <div className="flex flex-1" />
             <div className="flex items-center gap-x-4 lg:gap-x-6">
               {/* Notifications */}
-              <button className="-m-2.5 p-2.5 text-gray-400 hover:text-gray-500">
-                <span className="sr-only">View notifications</span>
-                <BellIcon className="h-6 w-6" />
-                {unreadCount > 0 && (
-                  <span className="absolute -mt-1 -mr-1 h-4 w-4 rounded-full bg-red-500 text-xs text-white flex items-center justify-center">
-                    {unreadCount}
-                  </span>
-                )}
-              </button>
+              <div className="relative">
+                <button className="-m-2.5 p-2.5 text-gray-400 hover:text-gray-500">
+                  <span className="sr-only">View notifications</span>
+                  <BellIcon className="h-6 w-6" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-xs text-white flex items-center justify-center">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </button>
+              </div>
 
               {/* Profile dropdown */}
               <div className="flex items-center gap-x-4">

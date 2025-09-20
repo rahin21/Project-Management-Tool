@@ -9,6 +9,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { BullModule } from '@nestjs/bull';
 import { ElasticsearchModule } from './modules/search/elasticsearch.module';
 import { SearchModule } from './modules/search/search.module';
+// import { AppGraphQLModule } from './modules/graphql/graphql.module';
 import { User } from './modules/users/user.entity';
 import { Project } from './modules/projects/project.entity';
 import { Task } from './modules/tasks/task.entity';
@@ -47,6 +48,7 @@ import configuration from './config/configuration';
     CacheModuleConfig,
     ElasticsearchModule,
     SearchModule,
+    // AppGraphQLModule, // Temporarily disabled due to Apollo compatibility issues
     UsersModule,
     AuthModule,
     ProjectsModule,

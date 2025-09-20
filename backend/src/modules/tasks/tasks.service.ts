@@ -6,6 +6,8 @@ import { TaskDependency } from './task-dependency.entity';
 import { Project } from '../projects/project.entity';
 import { User } from '../users/user.entity';
 import { SearchService } from '../search/search.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../notifications/notification.entity';
 
 @Injectable()
 export class TasksService {
@@ -13,6 +15,7 @@ export class TasksService {
     @InjectRepository(Task) private readonly tasks: Repository<Task>,
     @InjectRepository(TaskDependency) private readonly deps: Repository<TaskDependency>,
     private searchService: SearchService,
+    private notificationsService: NotificationsService,
   ) {}
   
   findAll() {
@@ -62,11 +65,27 @@ export class TasksService {
     // Index the task in Elasticsearch
     await this.searchService.indexTask(savedTask);
     
+    // Send notification to assigned user if task is assigned
+    if (savedTask.assignedTo) {
+      await this.notificationsService.createTaskNotification(
+        savedTask.assignedTo,
+        savedTask.title,
+        NotificationType.TASK_ASSIGNED,
+        savedTask.id
+      );
+    }
+    
     return savedTask;
   }
 
   async update(id: string, updateData: any) {
     try {
+      // Get the existing task first
+      const existingTask = await this.findOne(id);
+      if (!existingTask) {
+        throw new Error('Task not found');
+      }
+      
       // Transform the DTO data to match entity structure
       const transformedData: any = { ...updateData };
       
@@ -99,6 +118,52 @@ export class TasksService {
       } catch (searchError) {
         // Log search error but don't fail the update
         console.error('Failed to index task in Elasticsearch:', searchError);
+      }
+      
+      // Send notifications for task updates
+      // Notify if task was assigned to a new user
+      if (updateData.assignedToId && existingTask.assignedTo?.id !== updateData.assignedToId) {
+        if (updatedTask.assignedTo) {
+          await this.notificationsService.createTaskNotification(
+            updatedTask.assignedTo,
+            updatedTask.title,
+            NotificationType.TASK_ASSIGNED,
+            updatedTask.id
+          );
+        }
+      }
+      
+      // Notify if task status changed to completed
+      if (updateData.status === TaskStatus.DONE && existingTask.status !== TaskStatus.DONE) {
+        if (updatedTask.assignedTo) {
+          await this.notificationsService.createTaskNotification(
+            updatedTask.assignedTo,
+            updatedTask.title,
+            NotificationType.TASK_COMPLETED,
+            updatedTask.id
+          );
+        }
+        // Also notify project owner
+        if (updatedTask.project?.owner && updatedTask.project.owner.id !== updatedTask.assignedTo?.id) {
+          await this.notificationsService.createTaskNotification(
+            updatedTask.project.owner,
+            updatedTask.title,
+            NotificationType.TASK_COMPLETED,
+            updatedTask.id
+          );
+        }
+      }
+      
+      // General task update notification (only if not already notified above)
+      if (!updateData.assignedToId && updateData.status !== TaskStatus.DONE) {
+        if (updatedTask.assignedTo) {
+          await this.notificationsService.createTaskNotification(
+            updatedTask.assignedTo,
+            updatedTask.title,
+            NotificationType.TASK_UPDATED,
+            updatedTask.id
+          );
+        }
       }
       
       return updatedTask;

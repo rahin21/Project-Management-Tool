@@ -13,10 +13,12 @@
     "migration:generate": "ts-node -r tsconfig-paths/register node_modules/typeorm/cli.js migration:generate -d src/ormconfig.ts src/migrations/auto"
   },
   "dependencies": {
+    "@apollo/gateway": "^2.11.2",
+    "apollo-server-express": "^3.12.1",
     "@bull-board/api": "^5.21.2",
     "@bull-board/express": "^5.21.2",
     "@elastic/elasticsearch": "^8.15.0",
-    "@nestjs/apollo": "^12.2.2",
+    "@nestjs/apollo": "^10.1.7",
     "@nestjs/bull": "^10.2.0",
     "@nestjs/common": "^10.3.0",
     "@nestjs/config": "^3.2.3",
@@ -32,7 +34,7 @@
     "@nestjs/typeorm": "^10.0.2",
     "@nestjs/websockets": "^10.3.0",
     "@types/passport-local": "^1.0.38",
-    "apollo-server-express": "^3.13.0",
+
     "axios": "^1.12.2",
     "bcryptjs": "^2.4.3",
     "bull": "^4.16.3",
@@ -54,7 +56,7 @@
     "ws": "^8.14.2"
   },
   "devDependencies": {
-    "@nestjs/cli": "^10.3.2",
+    "@nestjs/cli": "^11.0.10",
     "@nestjs/schematics": "^10.0.2",
     "@nestjs/testing": "^10.3.0",
     "@types/bcryptjs": "^2.4.6",

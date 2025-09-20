@@ -36,10 +36,27 @@ type Mutation {
 
 type Notification {
   created_at: DateTime!
+  entityId: String
+  entityType: String
   id: ID!
   message: String!
   read: Boolean!
+  type: NotificationType!
   user: User!
+}
+
+enum NotificationType {
+  GENERAL
+  PROJECT_CREATED
+  PROJECT_DELETED
+  PROJECT_MEMBER_ADDED
+  PROJECT_MEMBER_REMOVED
+  PROJECT_UPDATED
+  TASK_ASSIGNED
+  TASK_COMPLETED
+  TASK_DUE_SOON
+  TASK_OVERDUE
+  TASK_UPDATED
 }
 
 type Project {

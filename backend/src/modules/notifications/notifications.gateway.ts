@@ -8,17 +8,9 @@ import { Server, Socket } from 'socket.io';
     credentials: true,
   },
   allowEIO3: true,
-  transports: ['polling'], // Use only polling to match frontend
-  upgrade: false, // Disable transport upgrades
-  pingTimeout: 60000, // Reduce ping timeout
-  pingInterval: 25000, // Reduce ping interval
-  upgradeTimeout: 30000,
-  maxHttpBufferSize: 1e6,
-  allowRequest: (req, callback) => {
-    // Add logging for connection attempts
-    console.log('Connection attempt from:', req.headers.origin);
-    callback(null, true);
-  },
+  transports: ['websocket', 'polling'], // Allow both transports
+  pingTimeout: 60000,
+  pingInterval: 25000,
 })
 export class NotificationsGateway implements OnModuleInit, OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
@@ -36,7 +28,7 @@ export class NotificationsGateway implements OnModuleInit, OnGatewayConnection, 
   }
 
   handleDisconnect(client: Socket) {
-    console.log(`Client disconnected: ${client.id} - reason: ${client.disconnected}`);
+    console.log(`Client disconnected: ${client.id}`);
   }
 
   emitToUser(userId: string, event: string, data: any) {
